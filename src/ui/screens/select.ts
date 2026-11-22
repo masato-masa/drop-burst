@@ -13,7 +13,7 @@ export function renderSelect(root: HTMLElement, deps: Deps): () => void {
         const num = l.id.split('-')[1];
         return `<button class="level-card${open ? '' : ' locked'}${stars === 3 ? ' perfect' : ''}" type="button" data-level="${l.id}"${open ? '' : ' aria-disabled="true"'}>
             <span class="level-num">${num}</span>
-            <span class="level-stars">${open ? [0, 1, 2].map((i) => `<span class="star${i < stars ? ' on' : ''}">★</span>`).join('') : '<span class="lock">🔒</span>'}</span>
+            <span class="level-stars">${open ? (stars > 0 ? [0, 1, 2].map((i) => `<span class="star${i < stars ? ' on' : ''}">★</span>`).join('') : '') : '<span class="lock">🔒</span>'}</span>
           </button>`;
       })
       .join('');
