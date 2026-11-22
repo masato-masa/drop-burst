@@ -86,7 +86,8 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
 
   const setBubble = (i: number, v: number, bump = false): void => {
     const el = bubbleEls[i]!;
-    el.className = v === -1 ? 'bubble vS' : v === -2 ? 'bubble vM1' : v === -3 ? 'bubble vM2' : `bubble v${v}`;
+    el.className = v === -1 ? 'bubble vS' : v === -2 ? 'bubble vM1' : v === -3 ? 'bubble vM2' : v >= 10 ? 'bubble vL' : `bubble v${v}`;
+    if (v >= 10) el.dataset.n = String(v - 10);
     if (bump && v > 0) {
       void el.offsetWidth;
       el.classList.add('bump');
@@ -110,6 +111,9 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
   if (init.cells.some((v) => v === -1) && !seen('stone')) {
     markSeen('stone');
     toast('石は しずくを とめるよ', 4500);
+  } else if (init.cells.some((v) => v >= 10) && !seen('big')) {
+    markSeen('big');
+    toast('おおきい泡は 8 つぶで はじけるよ', 4500);
   } else if (init.cells.some((v) => v < -1) && !seen('mirror')) {
     markSeen('mirror');
     toast('かがみは しずくの むきを かえるよ', 4500);

@@ -5,12 +5,17 @@
 // - しずくは 1 ティックに 1 マス進む。空のマスはそのまま通り抜け、泡に当たると水が 1 つぶ増えて消える。
 //   盤の外へ出たしずくは消える。
 // - 同じティックにしずくが着いた泡は、全部足してから判定する（4 つぶ以上ではじける）。
+// - 大きい泡（水の量を a〜g の文字で書く）は 8 つぶではじける。しずくは 1 つぶずつたまる。
 // - 石（-1）はしずくをさえぎる。しずくは石に当たると消える。石はタップできず、はじけない。
 // - 鏡（スラッシュ = -2、バックスラッシュ = -3）はしずくの向きを 90 度かえる。しずくは鏡のマスを出て、新しい向きに進む。鏡はタップできない。
 //   （鏡で輪になって止まらないしずくは、40 マス進んだら消える。）
 // - 泡が全部なくなったらクリア。タップの回数が少ないほど星が多い。
 
 export const CAP = 4;
+/** 大きい泡（文字 a〜g = 水 1〜7 つぶ。内部の値は 10 + つぶ数）は 8 つぶではじける */
+export const BIG = 10;
+export const BIG_CAP = 8;
+export const capOf = (v: number): number => (v >= BIG ? BIG + BIG_CAP : CAP);
 
 export interface Board {
   w: number;
@@ -56,13 +61,13 @@ export const parseRows = (rows: string[]): Board => {
   const h = rows.length;
   const w = rows[0]!.length;
   const cells: number[] = [];
-  for (const r of rows) for (const c of r) cells.push(c === '.' ? 0 : c === '#' ? -1 : c === '/' ? -2 : c === '\\' ? -3 : Number(c));
+  for (const r of rows) for (const c of r) cells.push(c === '.' ? 0 : c === '#' ? -1 : c === '/' ? -2 : c === '\\' ? -3 : c >= 'a' && c <= 'g' ? BIG + (c.charCodeAt(0) - 96) : Number(c));
   return { w, h, cells };
 };
 
 export const toRows = (b: Board): string[] => {
   const out: string[] = [];
-  for (let y = 0; y < b.h; y++) out.push(b.cells.slice(y * b.w, (y + 1) * b.w).map((v) => (v === -1 ? '#' : v === -2 ? '/' : v === -3 ? '\\' : v ? String(v) : '.')).join(''));
+  for (let y = 0; y < b.h; y++) out.push(b.cells.slice(y * b.w, (y + 1) * b.w).map((v) => (v === -1 ? '#' : v === -2 ? '/' : v === -3 ? '\\' : v >= BIG ? String.fromCharCode(96 + v - BIG) : v ? String(v) : '.')).join(''));
   return out;
 };
 
@@ -87,7 +92,7 @@ export function tap(b: Board, idx: number): TapResult | null {
     const y = Math.floor(i / b.w);
     for (const dir of [0, 1, 2, 3] as const) droplets.push({ x, y, dir, life: 40 });
   };
-  const popped = cells[idx]! >= CAP;
+  const popped = cells[idx]! >= capOf(cells[idx]!);
   if (popped) burst(idx);
   const first = cells.slice();
   while (droplets.length) {
@@ -121,7 +126,7 @@ export function tap(b: Board, idx: number): TapResult | null {
     }
     droplets = next;
     const popList: number[] = [];
-    for (const i of [...touched].sort((a, b2) => a - b2)) if (cells[i]! >= CAP) popList.push(i);
+    for (const i of [...touched].sort((a, b2) => a - b2)) if (cells[i]! >= capOf(cells[i]!)) popList.push(i);
     for (const i of popList) burst(i);
     ticks.push({ flights, cells: cells.slice(), pops: popList });
   }

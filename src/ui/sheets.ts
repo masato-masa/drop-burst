@@ -31,6 +31,7 @@ export function openHelpSheet(): void {
        <li>しずくは あわに あたるまで まっすぐ すすみ、あたった あわに 1 つぶ たす。</li>
        <li>石（グレーの四角）は しずくを とめる。タップは できない。</li>
        <li>かがみ（ななめの線）は しずくの むきを 90 度かえる。タップは できない。</li>
+       <li>大きい泡（数字つき）は 8 つぶで はじける。</li>
        <li>あわを ぜんぶ けせば クリア。タップが すくないほど ★ が ふえる。</li>
      </ul>
      <button class="sheet-btn sheet-close" type="button">とじる</button>`,

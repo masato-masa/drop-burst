@@ -107,6 +107,26 @@
 .bubble.vM2 {
   background: linear-gradient(to top right, transparent 44%, #4a2a1a 44% 56%, transparent 56%), radial-gradient(circle at 35% 30%, #ffffff, #cfe9f6 70%);
 }
+.bubble.vL {
+  /* 大きい泡: 一回り大きく、中の数字が水のつぶ数（8 ではじける） */
+  width: 100%;
+  background: url('../assets/bubble3.webp') center / contain no-repeat;
+}
+.bubble.vL::after {
+  content: attr(data-n);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 3px #1f3f8a, 0 0 3px #1f3f8a, 0 2px 0 #1f3f8a;
+  pointer-events: none;
+}
+.bubble.vL i {
+  display: none;
+}
 .bubble.bump {
   animation: bump 150ms var(--ease);
 }
