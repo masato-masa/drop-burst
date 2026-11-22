@@ -28,7 +28,7 @@ function evalBoard(cells: number[]): { score: number; par: number | null; count:
 }
 
 const t0 = Date.now();
-let best = { cells: new Array(W * H).fill(0), score: -1e12, par: 0, count: 0, first: 0 };
+let best: { cells: number[]; score: number; par: number | null; count: number; first: number } = { cells: new Array(W * H).fill(0), score: -1e12, par: 0, count: 0, first: 0 };
 while (Date.now() - t0 < SEC * 1000) {
   // 出発点
   let cells = new Array(W * H).fill(0);
