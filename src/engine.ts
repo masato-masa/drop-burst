@@ -5,6 +5,7 @@
 // - しずくは 1 ティックに 1 マス進む。空のマスはそのまま通り抜け、泡に当たると水が 1 つぶ増えて消える。
 //   盤の外へ出たしずくは消える。
 // - 同じティックにしずくが着いた泡は、全部足してから判定する（4 つぶ以上ではじける）。
+// - 石（-1）はしずくをさえぎる。しずくは石に当たると消える。石はタップできず、はじけない。
 // - 泡が全部なくなったらクリア。タップの回数が少ないほど星が多い。
 
 export const CAP = 4;
@@ -12,7 +13,7 @@ export const CAP = 4;
 export interface Board {
   w: number;
   h: number;
-  /** 0 = 空、1〜3 = 水のつぶ数。index = y * w + x */
+  /** -1 = 石、0 = 空、1〜3 = 水のつぶ数。index = y * w + x */
   cells: number[];
 }
 
@@ -21,7 +22,7 @@ export interface Flight {
   from: number;
   to: number;
   dir: 0 | 1 | 2 | 3; // 上 下 左 右
-  /** 着いたマス（泡）の index。空を通り過ぎただけなら -1 */
+  /** 着いたマス（泡）の index。空を通り過ぎただけなら -1。石に当たって消えたら -2 */
   hit: number;
 }
 
@@ -53,24 +54,24 @@ export const parseRows = (rows: string[]): Board => {
   const h = rows.length;
   const w = rows[0]!.length;
   const cells: number[] = [];
-  for (const r of rows) for (const c of r) cells.push(c === '.' ? 0 : Number(c));
+  for (const r of rows) for (const c of r) cells.push(c === '.' ? 0 : c === '#' ? -1 : Number(c));
   return { w, h, cells };
 };
 
 export const toRows = (b: Board): string[] => {
   const out: string[] = [];
-  for (let y = 0; y < b.h; y++) out.push(b.cells.slice(y * b.w, (y + 1) * b.w).map((v) => (v ? String(v) : '.')).join(''));
+  for (let y = 0; y < b.h; y++) out.push(b.cells.slice(y * b.w, (y + 1) * b.w).map((v) => (v < 0 ? '#' : v ? String(v) : '.')).join(''));
   return out;
 };
 
 export const key = (b: Board): string => b.cells.join('');
 export const bubblesLeft = (b: Board): number => b.cells.reduce((n, v) => n + (v > 0 ? 1 : 0), 0);
-export const isClear = (b: Board): boolean => b.cells.every((v) => v === 0);
-export const waterLeft = (b: Board): number => b.cells.reduce((n, v) => n + v, 0);
+export const isClear = (b: Board): boolean => b.cells.every((v) => v <= 0);
+export const waterLeft = (b: Board): number => b.cells.reduce((n, v) => n + Math.max(0, v), 0);
 
 /** タップ。泡のないマスは null（手数を使わない）。 */
 export function tap(b: Board, idx: number): TapResult | null {
-  if (idx < 0 || idx >= b.cells.length || b.cells[idx] === 0) return null;
+  if (idx < 0 || idx >= b.cells.length || b.cells[idx]! <= 0) return null;
   const cells = b.cells.slice();
   const ticks: Tick[] = [];
   let pops = 0;
@@ -99,7 +100,9 @@ export function tap(b: Board, idx: number): TapResult | null {
         continue;
       }
       const to = ny * b.w + nx;
-      if (cells[to]! > 0) {
+      if (cells[to]! < 0) {
+        flights.push({ from, to, dir: d.dir, hit: -2 });
+      } else if (cells[to]! > 0) {
         cells[to]! += 1;
         touched.add(to);
         flights.push({ from, to, dir: d.dir, hit: to });

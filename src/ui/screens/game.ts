@@ -3,6 +3,7 @@ import { boardOf, getLevel, nextLevelId, starsFor } from '../../levels.ts';
 import { iconBack, iconGear, iconHelp, iconHint, iconReset, iconUndo } from '../icons.ts';
 import { openHelpSheet, openSettingsSheet } from '../sheets.ts';
 import { sfx } from '../sfx.ts';
+import { markSeen, seen } from '../storage.ts';
 import type { Deps } from '../types.ts';
 
 // しずくが 1 マス進む時間（ms）。確認用に ?slow=6 でゆっくりにできる。
@@ -85,7 +86,7 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
 
   const setBubble = (i: number, v: number, bump = false): void => {
     const el = bubbleEls[i]!;
-    el.className = `bubble v${v}`;
+    el.className = v < 0 ? 'bubble vS' : `bubble v${v}`;
     if (bump && v > 0) {
       void el.offsetWidth;
       el.classList.add('bump');
@@ -98,12 +99,18 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
   };
   renderAll(init.cells);
 
-  const toast = (t: string): void => {
+  const toast = (t: string, ms = 1800): void => {
     toastEl.textContent = t;
     toastEl.hidden = false;
     window.clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(() => (toastEl.hidden = true), 1800);
+    toastTimer = window.setTimeout(() => (toastEl.hidden = true), ms);
   };
+
+  // 新しい規則（石）は、初めて出る面で 1 行だけ見せる
+  if (init.cells.some((v) => v < 0) && !seen('stone')) {
+    markSeen('stone');
+    toast('石は しずくを とめるよ', 4500);
+  }
 
   const cellSize = (): number => boardEl.getBoundingClientRect().width / w;
   const center = (i: number, cs: number): { x: number; y: number } => ({ x: ((i % w) + 0.5) * cs, y: (Math.floor(i / w) + 0.5) * cs });
@@ -159,7 +166,10 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
         window.setTimeout(() => {
           if (ended) return;
           dropsEl.replaceChildren();
-          for (const f of tick.flights) if (f.hit >= 0) sfx.land();
+          for (const f of tick.flights) {
+            if (f.hit >= 0) sfx.land();
+            else if (f.hit === -2) sfx.plink();
+          }
           for (let i = 0; i < tick.cells.length; i++) {
             const v = tick.cells[i]!;
             if (tick.pops.includes(i)) {

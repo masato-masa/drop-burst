@@ -80,6 +80,10 @@ export class Progress {
   }
 }
 
+/** 初めて見せる説明を 1 度だけにするための印 */
+export const seen = (k: string): boolean => kv.get(`dropburst:seen:${k}`) === '1';
+export const markSeen = (k: string): void => kv.set(`dropburst:seen:${k}`, '1');
+
 export const settings = {
   sfx(): boolean {
     return kv.get('dropburst:sfx') !== '0';

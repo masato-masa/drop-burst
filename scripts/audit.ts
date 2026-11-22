@@ -1,7 +1,8 @@
-// 全ステージの検証: 解ける・par が最少手数と一致・盤の寸法が同じ・解の再生でクリアできる。
+// 全ステージの検証: 解ける・par が最少手数と一致・最短の手の集合が 1 通り・盤の寸法が同じ・解の再生でクリアできる。
 //   node --experimental-strip-types scripts/audit.ts
 import { isClear, parseRows, tap, toRows } from '../src/engine.ts';
 import { solve } from '../src/solver.ts';
+import { optimalSets } from '../src/optimal.ts';
 import data from '../src/levels.json' with { type: 'json' };
 
 let bad = 0;
@@ -12,7 +13,8 @@ for (const w of data) {
     n++;
     const b = parseRows(l.rows);
     const s = solve(b, l.par + 1);
-    const ok = s.par === l.par && b.w === 5 && b.h === 6 && toRows(b).join() === l.rows.join();
+    const os = optimalSets(b, l.par);
+    const ok = os.sets === 1 && s.par === l.par && b.w === 5 && b.h === 6 && toRows(b).join() === l.rows.join();
     // 解の再生: 最初の 1 手候補から貪欲に最少手数で解く
     let cur = b;
     let taps = 0;
@@ -28,7 +30,7 @@ for (const w of data) {
     if (!ok || !replay) {
       bad++;
       console.log(`NG ${l.id} par=${l.par} solver=${s.par} replay=${taps}/${isClear(cur)}`);
-    } else console.log(`OK ${l.id} par=${l.par} 解 ${s.count} 通り 初手 ${s.firstMoves.length}`);
+    } else console.log(`OK ${l.id} par=${l.par} 解 ${os.sequences} 通り（並べ替えを除くと手の集合 ${os.sets}）初手 ${s.firstMoves.length}`);
   }
 }
 console.log(`${n} 面中 NG ${bad}（${Date.now() - t0}ms）`);

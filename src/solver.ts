@@ -23,7 +23,7 @@ export function solve(start: Board, maxDepth: number, stateCap = 3_000_000): Sol
     const nextF = new Map<string, { board: Board; ways: number; first: Set<number> }>();
     for (const { board, ways, first } of frontier.values()) {
       for (let i = 0; i < board.cells.length; i++) {
-        if (board.cells[i] === 0) continue;
+        if (board.cells[i]! <= 0) continue;
         const r = tap(board, i);
         if (!r) continue;
         const k = key(r.board);

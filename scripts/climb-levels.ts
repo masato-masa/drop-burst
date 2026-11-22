@@ -4,6 +4,7 @@
 // 「par が目標どおり」「解が少ない」「連鎖で手数が減る」ほど高得点にして残す。
 import { makeBoard, toRows } from '../src/engine.ts';
 import { solve } from '../src/solver.ts';
+import { optimalSets } from '../src/optimal.ts';
 
 const [SEC = 30, PAR = 4, MINB = 5, MAXB = 7, SEED = 1] = process.argv.slice(2).map(Number);
 const W = 5;
@@ -23,7 +24,21 @@ function evalBoard(cells: number[]): { score: number; par: number | null; count:
   const naive = cells.reduce((a, v) => a + (v ? 4 - v : 0), 0);
   const slack = naive - sol.par;
   // par が目標からずれると大きく減点。解が少ない・初手が少ない・連鎖で減るほど加点。
-  const score = -Math.abs(sol.par - PAR) * 40 - Math.log2(sol.count) * 6 - (sol.firstMoves.length - 1) * 8 + Math.min(slack, 8) * 1.5;
+  let score = -Math.abs(sol.par - PAR) * 40 - Math.log2(sol.count) * 2 - (sol.firstMoves.length - 1) * 3 + Math.min(slack, 8) * 1.5;
+  if (sol.par === PAR && sol.count <= 400) {
+    // 手の集合が 1 つだけで、しかも「順番に意味がある」（並べ替えの多くが失敗する）盤を高く評価する
+    const o = optimalSets(makeBoard(W, H, cells), PAR);
+    const tapsOfSet = (o.examples[0] ?? '').split(',').filter(Boolean);
+    const counts = new Map<string, number>();
+    for (const t of tapsOfSet) counts.set(t, (counts.get(t) ?? 0) + 1);
+    let multi = 1;
+    let rest = tapsOfSet.length;
+    for (const c of counts.values()) {
+      for (let k = 1; k <= c; k++) multi = (multi * rest--) / k;
+    }
+    const orderRatio = o.sequences / Math.max(1, multi * o.sets);
+    score += -(o.sets - 1) * 25 - orderRatio * 30;
+  }
   return { score, par: sol.par, count: sol.count, first: sol.firstMoves.length };
 }
 

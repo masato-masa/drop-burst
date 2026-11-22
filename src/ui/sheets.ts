@@ -29,6 +29,7 @@ export function openHelpSheet(): void {
        <li>あわを タップすると、水が 1 つぶ ふえる。</li>
        <li>4 つぶに なると はじけて、上下左右へ しずくが とぶ。</li>
        <li>しずくは あわに あたるまで まっすぐ すすみ、あたった あわに 1 つぶ たす。</li>
+       <li>石（グレーの四角）は しずくを とめる。タップは できない。</li>
        <li>あわを ぜんぶ けせば クリア。タップが すくないほど ★ が ふえる。</li>
      </ul>
      <button class="sheet-btn sheet-close" type="button">とじる</button>`,
