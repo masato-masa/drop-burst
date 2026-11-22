@@ -6,6 +6,8 @@
 //   盤の外へ出たしずくは消える。
 // - 同じティックにしずくが着いた泡は、全部足してから判定する（4 つぶ以上ではじける）。
 // - 石（-1）はしずくをさえぎる。しずくは石に当たると消える。石はタップできず、はじけない。
+// - 鏡（スラッシュ = -2、バックスラッシュ = -3）はしずくの向きを 90 度かえる。しずくは鏡のマスを出て、新しい向きに進む。鏡はタップできない。
+//   （鏡で輪になって止まらないしずくは、40 マス進んだら消える。）
 // - 泡が全部なくなったらクリア。タップの回数が少ないほど星が多い。
 
 export const CAP = 4;
@@ -22,7 +24,7 @@ export interface Flight {
   from: number;
   to: number;
   dir: 0 | 1 | 2 | 3; // 上 下 左 右
-  /** 着いたマス（泡）の index。空を通り過ぎただけなら -1。石に当たって消えたら -2 */
+  /** 着いたマス（泡）の index。空を通り過ぎただけなら -1。石に当たって消えたら -2。鏡で向きが変わったら -3 */
   hit: number;
 }
 
@@ -54,13 +56,13 @@ export const parseRows = (rows: string[]): Board => {
   const h = rows.length;
   const w = rows[0]!.length;
   const cells: number[] = [];
-  for (const r of rows) for (const c of r) cells.push(c === '.' ? 0 : c === '#' ? -1 : Number(c));
+  for (const r of rows) for (const c of r) cells.push(c === '.' ? 0 : c === '#' ? -1 : c === '/' ? -2 : c === '\\' ? -3 : Number(c));
   return { w, h, cells };
 };
 
 export const toRows = (b: Board): string[] => {
   const out: string[] = [];
-  for (let y = 0; y < b.h; y++) out.push(b.cells.slice(y * b.w, (y + 1) * b.w).map((v) => (v < 0 ? '#' : v ? String(v) : '.')).join(''));
+  for (let y = 0; y < b.h; y++) out.push(b.cells.slice(y * b.w, (y + 1) * b.w).map((v) => (v === -1 ? '#' : v === -2 ? '/' : v === -3 ? '\\' : v ? String(v) : '.')).join(''));
   return out;
 };
 
@@ -76,20 +78,21 @@ export function tap(b: Board, idx: number): TapResult | null {
   const ticks: Tick[] = [];
   let pops = 0;
   cells[idx]! += 1;
-  let droplets: { x: number; y: number; dir: 0 | 1 | 2 | 3 }[] = [];
+  type Drop = { x: number; y: number; dir: 0 | 1 | 2 | 3; life: number };
+  let droplets: Drop[] = [];
   const burst = (i: number) => {
     cells[i] = 0;
     pops++;
     const x = i % b.w;
     const y = Math.floor(i / b.w);
-    for (const dir of [0, 1, 2, 3] as const) droplets.push({ x, y, dir });
+    for (const dir of [0, 1, 2, 3] as const) droplets.push({ x, y, dir, life: 40 });
   };
   const popped = cells[idx]! >= CAP;
   if (popped) burst(idx);
   const first = cells.slice();
   while (droplets.length) {
     const flights: Flight[] = [];
-    const next: typeof droplets = [];
+    const next: Drop[] = [];
     const touched = new Set<number>();
     for (const d of droplets) {
       const from = d.y * b.w + d.x;
@@ -100,15 +103,20 @@ export function tap(b: Board, idx: number): TapResult | null {
         continue;
       }
       const to = ny * b.w + nx;
-      if (cells[to]! < 0) {
+      if (cells[to]! === -1) {
         flights.push({ from, to, dir: d.dir, hit: -2 });
+      } else if (cells[to]! < -1) {
+        // 鏡: 向きをかえて、次のティックからそちらへ進む
+        const nd = (cells[to] === -2 ? [3, 2, 1, 0] : [2, 3, 0, 1])[d.dir]! as 0 | 1 | 2 | 3;
+        flights.push({ from, to, dir: d.dir, hit: -3 });
+        if (d.life > 0) next.push({ x: nx, y: ny, dir: nd, life: d.life - 1 });
       } else if (cells[to]! > 0) {
         cells[to]! += 1;
         touched.add(to);
         flights.push({ from, to, dir: d.dir, hit: to });
       } else {
         flights.push({ from, to, dir: d.dir, hit: -1 });
-        next.push({ x: nx, y: ny, dir: d.dir });
+        if (d.life > 0) next.push({ x: nx, y: ny, dir: d.dir, life: d.life - 1 });
       }
     }
     droplets = next;

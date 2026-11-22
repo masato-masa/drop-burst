@@ -96,6 +96,10 @@ export const sfx = {
   plink(): void {
     if (gate('plink', 50)) tone(1500, 0.05, 'square', 0.04, 0, 900, 2600);
   },
+  /** しずくが鏡で曲がった */
+  bounce(): void {
+    if (gate('bounce', 50)) tone(1900, 0.05, 'sine', 0.05, 0, 2400);
+  },
   /** 泡のないマスをタップ */
   nope(): void {
     if (gate('nope', 120)) tone(170, 0.09, 'triangle', 0.09, 0, 130, 700);

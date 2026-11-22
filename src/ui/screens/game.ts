@@ -86,7 +86,7 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
 
   const setBubble = (i: number, v: number, bump = false): void => {
     const el = bubbleEls[i]!;
-    el.className = v < 0 ? 'bubble vS' : `bubble v${v}`;
+    el.className = v === -1 ? 'bubble vS' : v === -2 ? 'bubble vM1' : v === -3 ? 'bubble vM2' : `bubble v${v}`;
     if (bump && v > 0) {
       void el.offsetWidth;
       el.classList.add('bump');
@@ -107,9 +107,12 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
   };
 
   // 新しい規則（石）は、初めて出る面で 1 行だけ見せる
-  if (init.cells.some((v) => v < 0) && !seen('stone')) {
+  if (init.cells.some((v) => v === -1) && !seen('stone')) {
     markSeen('stone');
     toast('石は しずくを とめるよ', 4500);
+  } else if (init.cells.some((v) => v < -1) && !seen('mirror')) {
+    markSeen('mirror');
+    toast('かがみは しずくの むきを かえるよ', 4500);
   }
 
   const cellSize = (): number => boardEl.getBoundingClientRect().width / w;
@@ -169,6 +172,7 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
           for (const f of tick.flights) {
             if (f.hit >= 0) sfx.land();
             else if (f.hit === -2) sfx.plink();
+            else if (f.hit === -3) sfx.bounce();
           }
           for (let i = 0; i < tick.cells.length; i++) {
             const v = tick.cells[i]!;

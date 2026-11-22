@@ -1,0 +1,107 @@
+// （石つき版）山登り法で「最短の解がただ 1 通り（初手も 1 つ）」の盤を探す。使い方:
+//   node --experimental-strip-types scripts/climb-levels.ts <秒> <par> <最小泡数> <最大泡数> <シード>
+// 乱数の盤から出発して、泡を動かす・値を変える・足す・消すを繰り返し、
+// 「par が目標どおり」「解が少ない」「連鎖で手数が減る」ほど高得点にして残す。
+import { makeBoard, toRows } from '../src/engine.ts';
+import { solve } from '../src/solver.ts';
+import { optimalSets } from '../src/optimal.ts';
+
+const [SEC = 30, PAR = 4, MINB = 5, MAXB = 7, SEED = 1, MINS = 2, MAXS = 5] = process.argv.slice(2).map(Number);
+const W = 5;
+const H = 6;
+let s = (SEED * 2654435761) >>> 0 || 1;
+const rnd = () => {
+  s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+  return s / 4294967296;
+};
+const ri = (n: number) => Math.floor(rnd() * n);
+
+function evalBoard(cells: number[]): { score: number; par: number | null; count: number; first: number } {
+  const n = cells.filter((v) => v > 0).length;
+  const ns = cells.filter((v) => v < 0).length;
+  if (n < MINB || n > MAXB || ns < MINS || ns > MAXS) return { score: -1e9, par: null, count: 0, first: 0 };
+  const sol = solve(makeBoard(W, H, cells), PAR + 1, 120_000);
+  if (sol.par === null) return { score: -1e8, par: null, count: 0, first: 0 };
+  const naive = cells.reduce((a, v) => a + (v > 0 ? 4 - v : 0), 0);
+  const slack = naive - sol.par;
+  // par が目標からずれると大きく減点。解が少ない・初手が少ない・連鎖で減るほど加点。
+  let score = -Math.abs(sol.par - PAR) * 40 - Math.log2(sol.count) * 2 - (sol.firstMoves.length - 1) * 3 + Math.min(slack, 8) * 1.5;
+  if (sol.par === PAR) {
+    // 石が全部「効いている」盤だけを高く評価する（その石を外すと最少手数が変わる）
+    for (let i = 0; i < cells.length; i++) {
+      if (cells[i]! >= 0) continue;
+      const c3 = cells.slice();
+      c3[i] = 0;
+      const s3 = solve(makeBoard(W, H, c3), PAR + 1, 60_000);
+      if (s3.par === PAR && s3.count === sol.count) score -= 18; // 外しても何も変わらない石
+    }
+  }
+  if (sol.par === PAR && sol.count <= 400) {
+    // 手の集合が 1 つだけで、しかも「順番に意味がある」（並べ替えの多くが失敗する）盤を高く評価する
+    const o = optimalSets(makeBoard(W, H, cells), PAR);
+    const tapsOfSet = (o.examples[0] ?? '').split(',').filter(Boolean);
+    const counts = new Map<string, number>();
+    for (const t of tapsOfSet) counts.set(t, (counts.get(t) ?? 0) + 1);
+    let multi = 1;
+    let rest = tapsOfSet.length;
+    for (const c of counts.values()) {
+      for (let k = 1; k <= c; k++) multi = (multi * rest--) / k;
+    }
+    const orderRatio = o.sequences / Math.max(1, multi * o.sets);
+    score += -(o.sets - 1) * 25 - orderRatio * 30;
+  }
+  return { score, par: sol.par, count: sol.count, first: sol.firstMoves.length };
+}
+
+const t0 = Date.now();
+let best: { cells: number[]; score: number; par: number | null; count: number; first: number } = { cells: new Array(W * H).fill(0), score: -1e12, par: 0, count: 0, first: 0 };
+while (Date.now() - t0 < SEC * 1000) {
+  // 出発点
+  let cells = new Array(W * H).fill(0);
+  const n0 = MINB + ri(MAXB - MINB + 1);
+  for (let k = 0; k < n0; ) {
+    const i = ri(W * H);
+    if (!cells[i]) {
+      cells[i] = 1 + ri(3);
+      k++;
+    }
+  }
+  const s0 = MINS + ri(MAXS - MINS + 1);
+  for (let k = 0; k < s0; ) {
+    const i = ri(W * H);
+    if (!cells[i]) {
+      cells[i] = -2 - ri(2);
+      k++;
+    }
+  }
+  let cur = evalBoard(cells);
+  for (let it = 0; it < 150 && Date.now() - t0 < SEC * 1000; it++) {
+    const c2 = cells.slice();
+    const op = ri(7);
+    const filled = c2.map((v, i) => (v > 0 ? i : -1)).filter((i) => i >= 0);
+    const stones = c2.map((v, i) => (v < 0 ? i : -1)).filter((i) => i >= 0);
+    const empty = c2.map((v, i) => (v === 0 ? i : -1)).filter((i) => i >= 0);
+    if (!empty.length || !filled.length) continue;
+    if (op === 0) c2[filled[ri(filled.length)]!] = 1 + ri(3);
+    else if (op === 1) {
+      const f = filled[ri(filled.length)]!;
+      const e = empty[ri(empty.length)]!;
+      c2[e] = c2[f]!;
+      c2[f] = 0;
+    } else if (op === 2 && filled.length < MAXB) c2[empty[ri(empty.length)]!] = 1 + ri(3);
+    else if (op === 3 && filled.length > MINB) c2[filled[ri(filled.length)]!] = 0;
+    else if (op === 4 && stones.length) {
+      c2[stones[ri(stones.length)]!] = 0;
+      c2[empty[ri(empty.length)]!] = -2 - ri(2);
+    } else if (op === 5 && stones.length < MAXS) c2[empty[ri(empty.length)]!] = -2 - ri(2);
+    else if (op === 6 && stones.length > MINS) c2[stones[ri(stones.length)]!] = 0;
+    else continue;
+    const e2 = evalBoard(c2);
+    if (e2.score >= cur.score) {
+      cells = c2;
+      cur = e2;
+    }
+  }
+  if (cur.score > best.score) best = { cells, ...cur };
+}
+console.log(JSON.stringify({ par: best.par, count: best.count, first: best.first, score: +best.score.toFixed(1), rows: toRows(makeBoard(W, H, best.cells)) }));
