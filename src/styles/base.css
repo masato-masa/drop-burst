@@ -1,0 +1,40 @@
+/* 共通のクロームは shared/ にある（出どころは C:\claude\shared-ui）。ここはこのゲームの色と外枠。 */
+@import './shared/tokens.css';
+@import './shared/chrome.css';
+
+:root {
+  /* 水の色。つぶ数が多いほど濃い。隣り合う色が相対輝度で十分離れるようにしてある。 */
+  --w1: #8fd3f4;
+  --w1-hi: #d6f1fc;
+  --w1-edge: #6bb9de;
+  --w2: #4aa8e8;
+  --w2-hi: #a9dcf8;
+  --w2-edge: #2f86c9;
+  --w3: #2b6fd1;
+  --w3-hi: #6aa5ea;
+  --w3-edge: #1f55a8;
+  --star: #f3c55a;
+  --star-off: #e4dcd5;
+  --ink: var(--title);
+  --ink-soft: var(--muted);
+  --radius: 14px;
+  --shadow: var(--shadow-xs);
+}
+
+html,
+body {
+  min-height: 100%;
+  overscroll-behavior: none;
+}
+
+.app {
+  max-width: 592px;
+  margin: 0 auto;
+}
+
+.star {
+  color: var(--star-off);
+}
+.star.on {
+  color: var(--star);
+}
