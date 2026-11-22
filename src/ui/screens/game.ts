@@ -5,7 +5,8 @@ import { openHelpSheet, openSettingsSheet } from '../sheets.ts';
 import { sfx } from '../sfx.ts';
 import type { Deps } from '../types.ts';
 
-const TICK = 80; // しずくが 1 マス進む時間（ms）
+// しずくが 1 マス進む時間（ms）。確認用に ?slow=6 でゆっくりにできる。
+const TICK = 80 * Math.max(1, Number(new URLSearchParams(location.search).get('slow')) || 1);
 
 const pips = (): string => '<i class="p1"></i><i class="p2"></i><i class="p3"></i>';
 
@@ -148,7 +149,8 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
             const d = document.createElement('i');
             d.className = 'drop';
             dropsEl.appendChild(d);
-            d.animate([{ transform: `translate(${a.x}px, ${a.y}px)` }, { transform: `translate(${to.x}px, ${to.y}px)` }], { duration: TICK, easing: 'linear', fill: 'forwards' });
+            const rot = [0, 180, -90, 90][f.dir]!; // しずくの尖った先を飛ぶ向きへ
+            d.animate([{ transform: `translate(${a.x}px, ${a.y}px) rotate(${rot}deg)` }, { transform: `translate(${to.x}px, ${to.y}px) rotate(${rot}deg)` }], { duration: TICK, easing: 'linear', fill: 'forwards' });
           }
         }, t),
       );

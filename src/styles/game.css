@@ -31,7 +31,8 @@
   aspect-ratio: var(--cols) / var(--rows);
   gap: 4px;
   padding: 8px;
-  background: var(--surface);
+  /* 盤の水槽の絵は ChatGPT 製。白をうっすら重ねて、泡が主役に見えるようにする */
+  background: linear-gradient(rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.22)), url('../assets/board-bg.webp') center / cover no-repeat, var(--surface);
   border-radius: 20px;
   box-shadow: var(--shadow-lg);
   touch-action: none;
@@ -52,8 +53,8 @@
   width: 18%;
   height: 18%;
   border-radius: 50%;
-  background: var(--line);
-  opacity: 0.7;
+  background: #fff;
+  opacity: 0.75;
 }
 
 .bubble {
@@ -69,17 +70,22 @@
   opacity: 0;
   transform: scale(0.55);
 }
+/* 泡の絵は ChatGPT 製（scripts/slice-assets.mjs で切り出し）。水の量は絵の濃さと、中の点の数で伝える。 */
+.bubble.v1,
+.bubble.v2,
+.bubble.v3 {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
 .bubble.v1 {
-  background: radial-gradient(circle at 35% 30%, var(--w1-hi), var(--w1) 72%);
-  box-shadow: inset 0 0 0 3px var(--w1-edge);
+  background-image: url('../assets/bubble1.webp');
 }
 .bubble.v2 {
-  background: radial-gradient(circle at 35% 30%, var(--w2-hi), var(--w2) 72%);
-  box-shadow: inset 0 0 0 3px var(--w2-edge);
+  background-image: url('../assets/bubble2.webp');
 }
 .bubble.v3 {
-  background: radial-gradient(circle at 35% 30%, var(--w3-hi), var(--w3) 72%);
-  box-shadow: inset 0 0 0 3px var(--w3-edge);
+  background-image: url('../assets/bubble3.webp');
 }
 .bubble.bump {
   animation: bump 150ms var(--ease);
@@ -98,6 +104,7 @@
   margin: -9.5%;
   border-radius: 50%;
   background: #fff;
+  box-shadow: 0 0 0 2px rgb(20 60 140 / 0.55);
   opacity: 0;
 }
 .bubble.v1 .p1 {
@@ -143,12 +150,10 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 14px;
-  height: 14px;
-  margin: -7px 0 0 -7px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, var(--w2-hi), var(--w2));
-  box-shadow: 0 0 0 2px var(--w2-edge);
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  background: url('../assets/drop.webp') center / contain no-repeat;
 }
 
 /* はじけ */

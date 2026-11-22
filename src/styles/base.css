@@ -32,9 +32,16 @@ body {
   margin: 0 auto;
 }
 
+/* ★ は ChatGPT 製の絵（文字は読み上げ・コピー用に残して透明にする） */
 .star {
-  color: var(--star-off);
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  overflow: hidden;
+  color: transparent;
+  background: url('../assets/star.webp') center / contain no-repeat;
+  filter: grayscale(1) opacity(0.35);
 }
 .star.on {
-  color: var(--star);
+  filter: none;
 }

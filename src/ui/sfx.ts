@@ -18,13 +18,13 @@ function audio(): AudioContext | null {
     if (!ctx) {
       ctx = new AudioContext();
       const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -16;
+      comp.threshold.value = -10;
       comp.knee.value = 20;
       comp.ratio.value = 6;
       comp.attack.value = 0.003;
       comp.release.value = 0.15;
       master = ctx.createGain();
-      master.gain.value = 0.85;
+      master.gain.value = 2.2;
       master.connect(comp).connect(ctx.destination);
     }
     if (ctx.state === 'suspended') void ctx.resume();
