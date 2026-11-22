@@ -269,7 +269,7 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
       cellEls[hintCell]!.classList.add('hint');
       hintTimer = window.setTimeout(clearHint, 4000);
     };
-    worker.postMessage({ board, maxDepth: Math.max(2, level.par - taps + 4), id });
+    worker.postMessage({ board, maxDepth: 10, id });
   };
 
   // ---- 入力（指を置いた瞬間に反応する） ----
