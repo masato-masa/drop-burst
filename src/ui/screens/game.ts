@@ -99,6 +99,10 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
     leftEl.textContent = String(cs.filter((v) => v > 0).length);
   };
   renderAll(init.cells);
+  // 最初の面だけ、あと 1 つぶではじける泡（3 つぶ）を最初のタップまで脈打たせる（説明文なしで「押す」と分かる）
+  const firstCells = level.id === '1-1' ? init.cells.flatMap((v, i) => (v === 3 ? [i] : [])) : [];
+  const markFirst = (on: boolean): void => firstCells.forEach((i) => cellEls[i]!.classList.toggle('hint', on));
+  markFirst(true);
 
   const toast = (t: string, ms = 1800): void => {
     toastEl.textContent = t;
@@ -224,6 +228,7 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
       c.classList.add('nope');
       return;
     }
+    markFirst(false);
     history.push(board);
     board = res.board;
     taps++;
@@ -245,6 +250,7 @@ export function renderGame(root: HTMLElement, levelId: string, deps: Deps): () =
     msg.hidden = true;
     clearHint();
     renderAll(init.cells);
+    markFirst(true);
   };
 
   const undo = (): void => {

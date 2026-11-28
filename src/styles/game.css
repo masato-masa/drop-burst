@@ -263,6 +263,14 @@
 .toast[hidden] {
   display: none;
 }
+/* 背の低い画面（320×568 など）: 盤の上の余白が狭いので、ステータス行にかぶらないよう小さく近づける */
+@media (max-height: 640px) {
+  .toast {
+    top: -34px;
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+}
 
 /* ---- クリアのカード ---- */
 .message-card {
